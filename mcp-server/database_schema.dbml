@@ -1,0 +1,153 @@
+// =====================================================
+// AI MOVIE NIGHT PLANNER - DATABASE SCHEMA (DBML)
+// =====================================================
+// Color Scheme (Table Headers):
+//   🔵 Blue (#3498db)   - users (main user table)
+//   🔴 Red (#e74c3c)    - groups (main group table)
+//   🟢 Green (#2ecc71)  - movies (main movie catalog)
+//   ⚪ Gray (#95a5a6)   - group_members (junction table)
+//   🟣 Purple (#9b59b6) - ratings (user ratings)
+//   🟠 Orange (#f39c12) - watchlist_items (watchlist)
+//   🔷 Teal (#1abc9c)   - recommendations (AI history)
+// =====================================================
+
+// =====================================================
+// TABLE: users
+// =====================================================
+Table users {
+  user_id integer [primary key, increment]
+  user_name text [not null]
+  email text [not null, unique]
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'User accounts for movie night planning'
+}
+
+// =====================================================
+// TABLE: groups
+// =====================================================
+Table groups {
+  group_id uuid [primary key, default: `gen_random_uuid()`]
+  group_name text [not null]
+  description text
+  created_by integer [not null]
+  created_at timestamp [not null, default: `now()`]
+  is_active boolean [default: true]
+  
+  Note: 'Movie night groups (friends, family, etc.)'
+}
+
+// =====================================================
+// TABLE: group_members (Junction Table)
+// =====================================================
+Table group_members {
+  membership_id integer [primary key, increment]
+  group_id uuid [not null]
+  user_id integer [not null]
+  joined_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (group_id, user_id) [unique]
+  }
+  
+  Note: 'Many-to-many relationship between users and groups'
+}
+
+// =====================================================
+// TABLE: movies
+// =====================================================
+Table movies {
+  movie_id integer [primary key]
+  title text [not null]
+  overview text
+  release_date date
+  runtime integer
+  tmdb_rating decimal(3,1)
+  vote_count integer
+  genres text
+  cast text
+  director text
+  keywords text
+  poster_path text
+  embedding vector(1024)
+  original_language text
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'Movie catalog with semantic embeddings for vector similarity search'
+}
+
+// =====================================================
+// TABLE: ratings
+// =====================================================
+Table ratings {
+  rating_id integer [primary key, increment]
+  group_id uuid [not null]
+  movie_id integer [not null]
+  user_id integer [not null]
+  rating decimal(3,1) [not null]
+  review text
+  watched_date date
+  created_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (group_id, movie_id, user_id) [unique]
+  }
+  
+  Note: 'User movie ratings within group context (0-10 scale)'
+}
+
+// =====================================================
+// TABLE: watchlist_items
+// =====================================================
+Table watchlist_items {
+  watchlist_id integer [primary key, increment]
+  group_id uuid [not null]
+  movie_id integer [not null]
+  added_by integer [not null]
+  status text [default: 'pending']
+  added_at timestamp [not null, default: `now()`]
+  watched_at timestamp
+  
+  indexes {
+    (group_id, movie_id) [unique]
+  }
+  
+  Note: 'Group movie watchlist (pending/watched status)'
+}
+
+// =====================================================
+// TABLE: recommendations
+// =====================================================
+Table recommendations {
+  recommendation_id integer [primary key, increment]
+  group_id uuid [not null]
+  movie_id integer [not null]
+  request_by text [not null]
+  request_content text
+  request_embedding vector(1024)
+  explanation text
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'AI agent recommendation history with semantic embeddings'
+}
+
+// =====================================================
+// RELATIONSHIPS
+// =====================================================
+
+// ===== 🔵 USER RELATIONSHIPS (Blue) =====
+Ref: groups.created_by > users.user_id
+Ref: group_members.user_id > users.user_id
+Ref: ratings.user_id > users.user_id
+Ref: watchlist_items.added_by > users.user_id
+
+// ===== 🔴 GROUP RELATIONSHIPS (Red) =====
+Ref: group_members.group_id > groups.group_id
+Ref: ratings.group_id > groups.group_id
+Ref: watchlist_items.group_id > groups.group_id
+Ref: recommendations.group_id > groups.group_id
+
+// ===== 🟢 MOVIE RELATIONSHIPS (Green) =====
+Ref: ratings.movie_id > movies.movie_id
+Ref: watchlist_items.movie_id > movies.movie_id
+Ref: recommendations.movie_id > movies.movie_id

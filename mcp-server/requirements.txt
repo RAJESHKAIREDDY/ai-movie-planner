@@ -1,0 +1,17 @@
+# Core MCP framework - optional for frontend deployment
+# To run the MCP server separately, install: pip install fastmcp==4.0.3
+# movie_mcp_server.py handles missing import gracefully
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.30
+
+# Databricks SDK
+databricks-sdk==0.30.0
+
+# HTTP clients
+requests==2.31.0
+aiohttp==3.9.5
+
+# Streamlit frontend
+streamlit==1.36.0

@@ -1,0 +1,96 @@
+Table users {
+  user_id text [pk]
+  username text [unique, not null]
+  email text [unique, not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table groups {
+  group_id text [pk]
+  group_name text [not null]
+  description text
+  created_by text
+  created_at timestamptz [default: `now()`]
+  is_active boolean [default: true]
+}
+
+Table group_members {
+  membership_id text [pk]
+  group_id text [not null]
+  user_id text [not null]
+  joined_at timestamptz [default: `now()`]
+  
+  indexes {
+    (group_id, user_id) [unique]
+  }
+}
+
+Table movies {
+  movie_id int [pk]
+  title text [not null]
+  overview text
+  release_date date
+  runtime int
+  tmdb_rating decimal(2,1)
+  vote_count integer [default: 0]
+  genres jsonb
+  cast jsonb
+  director text
+  keywords jsonb
+  embedding vector(1024)
+  created_at timestamptz [default: `now()`]
+  original_language text
+}
+
+Table ratings {
+  rating_id text [pk]
+  user_id text [not null]
+  movie_id int [not null]
+  group_id text [not null]
+  rating decimal(3,1) [not null]
+  review_text text
+  watched_date date
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (user_id, movie_id, group_id) [unique]
+  }
+}
+
+Table watchlist_items {
+  watchlist_id text [pk]
+  group_id text [not null]
+  movie_id int [not null]
+  added_by text
+  added_at timestamptz [default: `now()`]
+  status text [default: 'pending']
+  
+  indexes {
+    (group_id, movie_id) [unique]
+  }
+}
+
+Table recommendations {
+  recommendation_id text [pk]
+  group_id text [not null]
+  movie_id int [not null]
+  requested_by text
+  request_context text [not null]
+  request_embedding vector(1024)
+  explanation text
+  recommendation_score decimal(5,4)
+  created_at timestamptz [default: `now()`]
+}
+
+ref: groups.created_by > users.user_id
+ref: group_members.group_id > groups.group_id
+ref: group_members.user_id > users.user_id
+ref: ratings.user_id > users.user_id
+ref: ratings.movie_id > movies.movie_id
+ref: ratings.group_id > groups.group_id
+ref: watchlist_items.group_id > groups.group_id
+ref: watchlist_items.movie_id > movies.movie_id
+ref: watchlist_items.added_by > users.user_id
+ref: recommendations.group_id > groups.group_id
+ref: recommendations.movie_id > movies.movie_id
+ref: recommendations.requested_by > users.user_id
